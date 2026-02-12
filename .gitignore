@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+
+# Database (stored in working directory, not repo)
+*.db
+*.db-journal
+data/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+
+# Screenshots (generated at runtime)
+screenshots/

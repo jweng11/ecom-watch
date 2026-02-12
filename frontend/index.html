@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ecom-Watch — Laptop Promotion Intelligence</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.10.4/Recharts.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #334155;
+      --border: #475569;
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --green: #22c55e;
+      --red: #ef4444;
+      --orange: #f97316;
+      --purple: #a855f7;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+    #root { min-height: 100vh; }
+
+    .app { display: flex; min-height: 100vh; }
+    .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); padding: 20px 0; flex-shrink: 0; position: fixed; height: 100vh; overflow-y: auto; }
+    .sidebar-logo { padding: 0 20px 24px; font-size: 20px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 10px; }
+    .sidebar-logo span { font-size: 14px; color: var(--text-dim); font-weight: 400; }
+    .nav-item { padding: 10px 20px; cursor: pointer; color: var(--text-dim); font-size: 14px; display: flex; align-items: center; gap: 10px; transition: all 0.15s; }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: var(--accent); color: white; font-weight: 500; }
+    .nav-section { padding: 16px 20px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--border); }
+
+    .main { margin-left: 220px; flex: 1; padding: 24px 32px; }
+    .page-title { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .page-subtitle { color: var(--text-dim); font-size: 14px; margin-bottom: 24px; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; }
+    .stat-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 700; }
+    .stat-value.blue { color: var(--accent); }
+    .stat-value.green { color: var(--green); }
+    .stat-value.orange { color: var(--orange); }
+    .stat-value.purple { color: var(--purple); }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+    .card-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+
+    .filters-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+    .filter-select, .filter-input { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 13px; outline: none; }
+    .filter-select:focus, .filter-input:focus { border-color: var(--accent); }
+    .filter-input { width: 200px; }
+    .filter-btn { background: var(--accent); color: white; border: none; border-radius: 6px; padding: 8px 16px; font-size: 13px; cursor: pointer; }
+    .filter-btn:hover { background: var(--accent-hover); }
+    .filter-btn.secondary { background: var(--surface2); }
+    .filter-btn.secondary:hover { background: var(--border); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 12px; background: var(--surface2); color: var(--text-dim); font-weight: 600; white-space: nowrap; position: sticky; top: 0; cursor: pointer; user-select: none; }
+    th:hover { color: var(--text); }
+    th.sorted { color: var(--accent); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    tr:hover td { background: rgba(59, 130, 246, 0.05); }
+    .discount-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .discount-low { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+    .discount-mid { background: rgba(249, 115, 22, 0.15); color: var(--orange); }
+    .discount-high { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+
+    .pagination { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; font-size: 13px; color: var(--text-dim); }
+    .page-buttons { display: flex; gap: 4px; }
+    .page-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 6px 12px; color: var(--text); cursor: pointer; font-size: 13px; }
+    .page-btn:hover { background: var(--border); }
+    .page-btn:disabled { opacity: 0.4; cursor: default; }
+    .page-btn.active { background: var(--accent); border-color: var(--accent); }
+
+    .chart-container { width: 100%; height: 350px; }
+    .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 1200px) { .chart-row { grid-template-columns: 1fr; } }
+
+    .loading { display: flex; align-items: center; justify-content: center; padding: 60px; color: var(--text-dim); }
+    .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; margin-right: 4px; }
+    .tag-retailer { background: rgba(59, 130, 246, 0.15); color: var(--accent); }
+    .tag-vendor { background: rgba(168, 85, 247, 0.15); color: var(--purple); }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useMemo } = React;
+const { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } = Recharts;
+
+const API = 'http://localhost:8000/api';
+
+async function api(path, params = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== null && v !== undefined && v !== '') query.set(k, v); });
+  const sep = query.toString() ? '?' : '';
+  const res = await fetch(`${API}${path}${sep}${query}`);
+  return res.json();
+}
+
+const COLORS = ['#3b82f6', '#22c55e', '#f97316', '#a855f7', '#ef4444', '#06b6d4', '#eab308', '#ec4899', '#14b8a6', '#f43f5e', '#8b5cf6', '#84cc16', '#0ea5e9', '#d946ef'];
+
+function formatCurrency(val) {
+  if (val == null) return '—';
+  return '$' + Number(val).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function DiscountBadge({ pct }) {
+  if (pct == null) return <span>—</span>;
+  const cls = pct >= 25 ? 'discount-high' : pct >= 15 ? 'discount-mid' : 'discount-low';
+  return <span className={`discount-badge ${cls}`}>{pct.toFixed(1)}%</span>;
+}
+
+// ==================== DASHBOARD PAGE ====================
+function DashboardPage() {
+  const [summary, setSummary] = useState(null);
+  const [byRetailer, setByRetailer] = useState([]);
+  const [byVendor, setByVendor] = useState([]);
+  const [priceDist, setPriceDist] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      api('/analytics/summary'),
+      api('/analytics/by-retailer'),
+      api('/analytics/by-vendor'),
+      api('/analytics/price-distribution'),
+    ]).then(([s, r, v, p]) => {
+      setSummary(s);
+      setByRetailer(r);
+      setByVendor(v.slice(0, 10));
+      setPriceDist(p);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) return <div className="loading"><div className="spinner"/><span>Loading dashboard...</span></div>;
+
+  return (
+    <div>
+      <h1 className="page-title">Dashboard</h1>
+      <p className="page-subtitle">Overview of {summary.total_promotions.toLocaleString()} laptop promotions across {summary.total_retailers} retailers</p>
+
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-label">Total Promotions</div>
+          <div className="stat-value blue">{summary.total_promotions.toLocaleString()}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Avg Discount</div>
+          <div className="stat-value green">{summary.avg_discount_pct}%</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Vendors Tracked</div>
+          <div className="stat-value purple">{summary.total_vendors}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Promo Cycles</div>
+          <div className="stat-value orange">{summary.total_cycles}</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-label">Date Range</div>
+          <div className="stat-value" style={{fontSize: 16}}>{summary.date_range.earliest} — {summary.date_range.latest}</div>
+        </div>
+      </div>
+
+      <div className="chart-row">
+        <div className="card">
+          <div className="card-title">Promotions by Retailer</div>
+          <div className="chart-container">
+            <ResponsiveContainer>
+              <BarChart data={byRetailer} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis type="number" stroke="#94a3b8" fontSize={12} />
+                <YAxis type="category" dataKey="retailer" stroke="#94a3b8" fontSize={12} width={90} />
+                <Tooltip contentStyle={{background:'#1e293b', border:'1px solid #475569', borderRadius:8, color:'#f1f5f9'}} />
+                <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">Price Distribution</div>
+          <div className="chart-container">
+            <ResponsiveContainer>
+              <BarChart data={priceDist}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="band" stroke="#94a3b8" fontSize={12} />
+                <YAxis stroke="#94a3b8" fontSize={12} />
+                <Tooltip contentStyle={{background:'#1e293b', border:'1px solid #475569', borderRadius:8, color:'#f1f5f9'}} />
+                <Bar dataKey="count" fill="#22c55e" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <div className="chart-row">
+        <div className="card">
+          <div className="card-title">Top Vendors by Promotion Count</div>
+          <div className="chart-container">
+            <ResponsiveContainer>
+              <BarChart data={byVendor} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis type="number" stroke="#94a3b8" fontSize={12} />
+                <YAxis type="category" dataKey="vendor" stroke="#94a3b8" fontSize={12} width={90} />
+                <Tooltip contentStyle={{background:'#1e293b', border:'1px solid #475569', borderRadius:8, color:'#f1f5f9'}} />
+                <Bar dataKey="count" fill="#a855f7" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="card-title">Avg Discount % by Retailer</div>
+          <div className="chart-container">
+            <ResponsiveContainer>
+              <BarChart data={byRetailer}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="retailer" stroke="#94a3b8" fontSize={12} />
+                <YAxis stroke="#94a3b8" fontSize={12} unit="%" />
+                <Tooltip contentStyle={{background:'#1e293b', border:'1px solid #475569', borderRadius:8, color:'#f1f5f9'}} formatter={(v) => v + '%'} />
+                <Bar dataKey="avg_discount_pct" fill="#f97316" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== PROMOTIONS PAGE ====================
+function PromotionsPage() {
+  const [data, setData] = useState({ items: [], total: 0, page: 1, pages: 0 });
+  const [filters, setFilters] = useState(null);
+  const [params, setParams] = useState({ page: 1, per_page: 50, sort_by: 'week_date', sort_dir: 'desc' });
+  const [loading, setLoading] = useState(true);
+
+  const loadData = useCallback(async (p) => {
+    setLoading(true);
+    const [promos, f] = await Promise.all([api('/promotions', p), filters ? Promise.resolve(filters) : api('/promotions/filters')]);
+    setData(promos);
+    if (!filters) setFilters(f);
+    setLoading(false);
+  }, [filters]);
+
+  useEffect(() => { loadData(params); }, [params]);
+
+  const updateFilter = (key, value) => {
+    setParams(prev => ({ ...prev, [key]: value, page: 1 }));
+  };
+
+  const setSort = (col) => {
+    setParams(prev => ({
+      ...prev,
+      sort_by: col,
+      sort_dir: prev.sort_by === col && prev.sort_dir === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const SortIcon = ({ col }) => {
+    if (params.sort_by !== col) return null;
+    return <span style={{marginLeft: 4}}>{params.sort_dir === 'asc' ? '▲' : '▼'}</span>;
+  };
+
+  return (
+    <div>
+      <h1 className="page-title">Promotions</h1>
+      <p className="page-subtitle">{data.total.toLocaleString()} promotions found</p>
+
+      {filters && (
+        <div className="filters-bar">
+          <select className="filter-select" value={params.retailer || ''} onChange={e => updateFilter('retailer', e.target.value)}>
+            <option value="">All Retailers</option>
+            {filters.retailers.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <select className="filter-select" value={params.vendor || ''} onChange={e => updateFilter('vendor', e.target.value)}>
+            <option value="">All Vendors</option>
+            {filters.vendors.map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
+          <select className="filter-select" value={params.cycle || ''} onChange={e => updateFilter('cycle', e.target.value)}>
+            <option value="">All Cycles</option>
+            {filters.cycles.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select className="filter-select" value={params.form_factor || ''} onChange={e => updateFilter('form_factor', e.target.value)}>
+            <option value="">All Form Factors</option>
+            {filters.form_factors.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
+          <input className="filter-input" placeholder="Search SKU, CPU, notes..." value={params.search || ''} onChange={e => updateFilter('search', e.target.value)} />
+          <button className="filter-btn secondary" onClick={() => setParams({ page: 1, per_page: 50, sort_by: 'week_date', sort_dir: 'desc' })}>Clear</button>
+        </div>
+      )}
+
+      <div className="card" style={{padding: 0, overflow: 'hidden'}}>
+        <div className="table-wrap" style={{maxHeight: 'calc(100vh - 320px)', overflowY: 'auto'}}>
+          <table>
+            <thead>
+              <tr>
+                <th onClick={() => setSort('week_date')} className={params.sort_by === 'week_date' ? 'sorted' : ''}>Date<SortIcon col="week_date"/></th>
+                <th onClick={() => setSort('retailer')} className={params.sort_by === 'retailer' ? 'sorted' : ''}>Retailer<SortIcon col="retailer"/></th>
+                <th onClick={() => setSort('vendor')} className={params.sort_by === 'vendor' ? 'sorted' : ''}>Vendor<SortIcon col="vendor"/></th>
+                <th>SKU</th>
+                <th onClick={() => setSort('msrp')} className={params.sort_by === 'msrp' ? 'sorted' : ''}>MSRP<SortIcon col="msrp"/></th>
+                <th onClick={() => setSort('ad_price')} className={params.sort_by === 'ad_price' ? 'sorted' : ''}>Ad Price<SortIcon col="ad_price"/></th>
+                <th onClick={() => setSort('discount')} className={params.sort_by === 'discount' ? 'sorted' : ''}>Discount<SortIcon col="discount"/></th>
+                <th>Disc %</th>
+                <th>Cycle</th>
+                <th>Form</th>
+                <th>LCD</th>
+                <th>CPU</th>
+                <th>GPU</th>
+                <th>RAM</th>
+                <th>Storage</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan="15" style={{textAlign:'center', padding:40, color:'var(--text-dim)'}}>Loading...</td></tr>
+              ) : data.items.map(p => (
+                <tr key={p.id}>
+                  <td>{p.week_date || '—'}</td>
+                  <td><span className="tag tag-retailer">{p.retailer}</span></td>
+                  <td><span className="tag tag-vendor">{p.vendor}</span></td>
+                  <td style={{maxWidth: 220, overflow:'hidden', textOverflow:'ellipsis'}} title={p.sku}>{p.sku}</td>
+                  <td>{formatCurrency(p.msrp)}</td>
+                  <td style={{fontWeight:600}}>{formatCurrency(p.ad_price)}</td>
+                  <td>{formatCurrency(p.discount)}</td>
+                  <td><DiscountBadge pct={p.discount_pct}/></td>
+                  <td>{p.cycle || '—'}</td>
+                  <td>{p.form_factor || '—'}</td>
+                  <td>{p.lcd_size || '—'}</td>
+                  <td style={{maxWidth: 140, overflow:'hidden', textOverflow:'ellipsis'}} title={p.cpu}>{p.cpu || '—'}</td>
+                  <td>{p.gpu || '—'}</td>
+                  <td>{p.ram || '—'}</td>
+                  <td>{p.storage || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="pagination" style={{padding: '12px 16px'}}>
+          <span>Showing {((data.page-1)*data.per_page)+1}–{Math.min(data.page*data.per_page, data.total)} of {data.total.toLocaleString()}</span>
+          <div className="page-buttons">
+            <button className="page-btn" disabled={data.page <= 1} onClick={() => setParams(p => ({...p, page: 1}))}>First</button>
+            <button className="page-btn" disabled={data.page <= 1} onClick={() => setParams(p => ({...p, page: p.page - 1}))}>Prev</button>
+            <span style={{padding: '6px 12px', color: 'var(--text-dim)'}}>Page {data.page} of {data.pages}</span>
+            <button className="page-btn" disabled={data.page >= data.pages} onClick={() => setParams(p => ({...p, page: p.page + 1}))}>Next</button>
+            <button className="page-btn" disabled={data.page >= data.pages} onClick={() => setParams(p => ({...p, page: data.pages}))}>Last</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==================== TRENDS PAGE ====================
+function TrendsPage() {
+  const [trends, setTrends] = useState([]);
+  const [filters, setFilters] = useState(null);
+  const [retailer, setRetailer] = useState('');
+  const [vendor, setVendor] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => { api('/promotions/filters').then(setFilters); }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    api('/analytics/discount-trends', { retailer, vendor }).then(d => { setTrends(d); setLoading(false); });
+  }, [retailer, vendor]);
+
+  return (
+    <div>
+      <h1 className="page-title">Trend Analysis</h1>
+      <p className="page-subtitle">Discount and pricing trends across promotional cycles</p>
+
+      {filters && (
+        <div className="filters-bar">
+          <select className="filter-select" value={retailer} onChange={e => setRetailer(e.target.value)}>
+            <option value="">All Retailers</option>
+            {filters.retailers.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+          <select className="filter-select" value={vendor} onChange={e => setVendor(e.target.value)}>
+            <option value="">All Vendors</option>
+            {filters.vendors.map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+      )}
+
+      {loading ? <div className="loading"><div className="spinner"/><span>Loading trends...</span></div> : (
+        <>
+          <div className="card">
+            <div className="card-title">Average Discount % by Cycle</div>
+            <div className="chart-container" style={{height: 400}}>
+              <ResponsiveContainer>
+                <LineChart data={trends}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis dataKey="cycle" stroke="#94a3b8" fontSize={11} angle={-30} textAnchor="end" height={60} />
+                  <YAxis stroke="#94a3b8" fontSize={12} unit="%" />
+                  <Tooltip contentStyle={{background:'#1e293b', border:'1px solid #475569', borderRadius:8, color:'#f1f5f9'}} formatter={(v) => v + '%'} />
+                  <Line type="monotone" dataKey="avg_discount_pct" stroke="#22c55e" strokeWidth={2} dot={{fill:'#22c55e', r:4}} name="Avg Discount %" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="chart-row">
+            <div className="card">
+              <div className="card-title">Average Ad Price by Cycle</div>
+              <div className="chart-container">
+                <ResponsiveContainer>
+                  <LineChart data={trends}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                    <XAxis dataKey="cycle" stroke="#94a3b8" fontSize={11} angle={-30} textAnchor="end" height={60} />
+                    <YAxis stroke="#94a3b8" fontSize={12} tickFormatter={v => '$' + v} />
+                    <Tooltip contentStyle={{background:'#1e293b', border:'1px solid #475569', borderRadius:8, color:'#f1f5f9'}} formatter={(v) => '$' + v.toFixed(2)} />
+                    <Line type="monotone" dataKey="avg_price" stroke="#3b82f6" strokeWidth={2} dot={{fill:'#3b82f6', r:4}} name="Avg Price" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-title">Promotion Count by Cycle</div>
+              <div className="chart-container">
+                <ResponsiveContainer>
+                  <BarChart data={trends}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                    <XAxis dataKey="cycle" stroke="#94a3b8" fontSize={11} angle={-30} textAnchor="end" height={60} />
+                    <YAxis stroke="#94a3b8" fontSize={12} />
+                    <Tooltip contentStyle={{background:'#1e293b', border:'1px solid #475569', borderRadius:8, color:'#f1f5f9'}} />
+                    <Bar dataKey="count" fill="#a855f7" radius={[4, 4, 0, 0]} name="# Promotions" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-title">Average Discount ($) by Cycle</div>
+            <div className="chart-container" style={{height: 300}}>
+              <ResponsiveContainer>
+                <BarChart data={trends}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis dataKey="cycle" stroke="#94a3b8" fontSize={11} angle={-30} textAnchor="end" height={60} />
+                  <YAxis stroke="#94a3b8" fontSize={12} tickFormatter={v => '$' + v} />
+                  <Tooltip contentStyle={{background:'#1e293b', border:'1px solid #475569', borderRadius:8, color:'#f1f5f9'}} formatter={(v) => '$' + v.toFixed(2)} />
+                  <Bar dataKey="avg_discount_dollars" fill="#f97316" radius={[4, 4, 0, 0]} name="Avg Discount $" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ==================== COMPARISON PAGE ====================
+function ComparisonPage() {
+  const [filters, setFilters] = useState(null);
+  const [cycle, setCycle] = useState('');
+  const [byRetailer, setByRetailer] = useState([]);
+  const [heatmap, setHeatmap] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => { api('/promotions/filters').then(setFilters); }, []);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      api('/analytics/by-retailer', cycle ? { cycle } : {}),
+      api('/analytics/vendor-retailer-heatmap', cycle ? { cycle } : {}),
+    ]).then(([r, h]) => {
+      setByRetailer(r);
+      setHeatmap(h);
+      setLoading(false);
+    });
+  }, [cycle]);
+
+  // Build heatmap data
+  const heatmapData = useMemo(() => {
+    if (!heatmap.length) return { vendors: [], retailers: [], grid: {} };
+    const vendors = [...new Set(heatmap.map(h => h.vendor))].sort();
+    const retailers = [...new Set(heatmap.map(h => h.retailer))].sort();
+    const grid = {};
+    heatmap.forEach(h => { grid[`${h.vendor}-${h.retailer}`] = h.count; });
+    return { vendors, retailers, grid };
+  }, [heatmap]);
+
+  const maxCount = useMemo(() => Math.max(...Object.values(heatmapData.grid), 1), [heatmapData]);
+
+  return (
+    <div>
+      <h1 className="page-title">Competitive Comparison</h1>
+      <p className="page-subtitle">Compare retailer strategies and vendor distribution</p>
+
+      {filters && (
+        <div className="filters-bar">
+          <select className="filter-select" value={cycle} onChange={e => setCycle(e.target.value)}>
+            <option value="">All Cycles</option>
+            {filters.cycles.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+      )}
+
+      {loading ? <div className="loading"><div className="spinner"/><span>Loading...</span></div> : (
+        <>
+          <div className="card">
+            <div className="card-title">Retailer Comparison</div>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Retailer</th>
+                    <th>Promotions</th>
+                    <th>Avg Price</th>
+                    <th>Avg Discount %</th>
+                    <th>Min Price</th>
+                    <th>Max Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {byRetailer.map(r => (
+                    <tr key={r.retailer}>
+                      <td><span className="tag tag-retailer">{r.retailer}</span></td>
+                      <td style={{fontWeight:600}}>{r.count.toLocaleString()}</td>
+                      <td>{formatCurrency(r.avg_price)}</td>
+                      <td><DiscountBadge pct={r.avg_discount_pct}/></td>
+                      <td>{formatCurrency(r.min_price)}</td>
+                      <td>{formatCurrency(r.max_price)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-title">Vendor × Retailer Heatmap</div>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Vendor</th>
+                    {heatmapData.retailers.map(r => <th key={r}>{r}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {heatmapData.vendors.map(v => (
+                    <tr key={v}>
+                      <td><span className="tag tag-vendor">{v}</span></td>
+                      {heatmapData.retailers.map(r => {
+                        const count = heatmapData.grid[`${v}-${r}`] || 0;
+                        const intensity = count / maxCount;
+                        const bg = count > 0 ? `rgba(59, 130, 246, ${0.1 + intensity * 0.6})` : 'transparent';
+                        return <td key={r} style={{background: bg, textAlign:'center', fontWeight: count > 0 ? 600 : 400, color: count > 0 ? '#f1f5f9' : '#475569'}}>{count || '—'}</td>;
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ==================== APP ====================
+function App() {
+  const [page, setPage] = useState('dashboard');
+
+  const pages = {
+    dashboard: DashboardPage,
+    promotions: PromotionsPage,
+    trends: TrendsPage,
+    comparison: ComparisonPage,
+  };
+
+  const PageComponent = pages[page] || DashboardPage;
+
+  return (
+    <div className="app">
+      <div className="sidebar">
+        <div className="sidebar-logo">
+          Ecom-Watch <span>v0.1</span>
+        </div>
+        <div className="nav-section">Overview</div>
+        <div className={`nav-item ${page === 'dashboard' ? 'active' : ''}`} onClick={() => setPage('dashboard')}>
+          📊 Dashboard
+        </div>
+        <div className="nav-section">Data</div>
+        <div className={`nav-item ${page === 'promotions' ? 'active' : ''}`} onClick={() => setPage('promotions')}>
+          📋 Promotions
+        </div>
+        <div className="nav-section">Analysis</div>
+        <div className={`nav-item ${page === 'trends' ? 'active' : ''}`} onClick={() => setPage('trends')}>
+          📈 Trends
+        </div>
+        <div className={`nav-item ${page === 'comparison' ? 'active' : ''}`} onClick={() => setPage('comparison')}>
+          ⚖️ Comparison
+        </div>
+        <div className="nav-section" style={{marginTop: 'auto', paddingTop: 24}}>Coming Soon</div>
+        <div className="nav-item" style={{opacity: 0.4, cursor: 'default'}}>🔍 Scraper</div>
+        <div className="nav-item" style={{opacity: 0.4, cursor: 'default'}}>📸 Screenshots</div>
+        <div className="nav-item" style={{opacity: 0.4, cursor: 'default'}}>🔔 Alerts</div>
+        <div className="nav-item" style={{opacity: 0.4, cursor: 'default'}}>⚙️ Settings</div>
+      </div>
+      <div className="main">
+        <PageComponent />
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
