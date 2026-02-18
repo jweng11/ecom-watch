@@ -4,6 +4,7 @@ import { DashboardPage } from "@/pages/Dashboard"
 import { PromotionsPage } from "@/pages/Promotions"
 import { TrendsPage } from "@/pages/Trends"
 import { ComparisonPage } from "@/pages/Comparison"
+import { ScreenshotsPage } from "@/pages/Screenshots"
 
 // [FIX] Add Error Boundary to catch unhandled rendering errors
 class ErrorBoundary extends Component {
@@ -49,6 +50,7 @@ const pages = {
   promotions: PromotionsPage,
   trends: TrendsPage,
   comparison: ComparisonPage,
+  screenshots: ScreenshotsPage,
 }
 
 export default function App() {

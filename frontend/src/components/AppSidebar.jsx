@@ -6,11 +6,11 @@ const navItems = [
   { id: "promotions", label: "Promotions", icon: Table2, section: "Data" },
   { id: "trends", label: "Trends", icon: TrendingUp, section: "Analysis" },
   { id: "comparison", label: "Comparison", icon: GitCompareArrows, section: "Analysis" },
+  { id: "screenshots", label: "Screenshots", icon: Camera, section: "Scraping" },
 ]
 
 const comingSoon = [
-  { label: "Scraper", icon: ScanSearch },
-  { label: "Screenshots", icon: Camera },
+  { label: "Review Queue", icon: ScanSearch },
   { label: "Alerts", icon: Bell },
   { label: "Settings", icon: Settings },
 ]
@@ -68,7 +68,7 @@ export function AppSidebar({ activePage, onNavigate }) {
       </nav>
 
       <div className="px-5 py-4 border-t border-border">
-        <p className="text-[11px] text-muted-foreground/50">Phase 1 — v0.1.0</p>
+        <p className="text-[11px] text-muted-foreground/50">Phase 2 — v0.2.0</p>
       </div>
     </aside>
   )

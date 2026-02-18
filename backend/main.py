@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database.models import init_db
 from api.promotions import router as promotions_router
 from api.analytics import router as analytics_router
+from api.scraping import router as scraping_router
 
 
 # [FIX] Replace deprecated @app.on_event("startup") with lifespan context manager
@@ -17,7 +18,7 @@ async def lifespan(app):
     yield
 
 
-app = FastAPI(title="Ecom-Watch", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Ecom-Watch", version="0.2.0", lifespan=lifespan)
 
 # [FIX] CORS: restrict origins instead of wildcard; disable credentials with wildcard
 app.add_middleware(
@@ -30,11 +31,12 @@ app.add_middleware(
 
 app.include_router(promotions_router)
 app.include_router(analytics_router)
+app.include_router(scraping_router)
 
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "version": "0.1.0"}
+    return {"status": "ok", "version": "0.2.0"}
 
 
 if __name__ == "__main__":
