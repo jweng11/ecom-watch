@@ -66,6 +66,31 @@ async function post(path, data = {}) {
   return res.json()
 }
 
+async function put(path, data = {}) {
+  let res
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+  } catch (networkError) {
+    throw new ApiError(
+      "Unable to connect to the server. Please check that the backend is running.",
+      0
+    )
+  }
+  if (!res.ok) {
+    let detail = `${res.status} ${res.statusText}`
+    try {
+      const body = await res.json()
+      if (body.detail) detail = body.detail
+    } catch {}
+    throw new ApiError(`API error: ${detail}`, res.status)
+  }
+  return res.json()
+}
+
 export const api = {
   // Promotions
   getPromotions: (p) => get("/promotions", p),
@@ -86,4 +111,11 @@ export const api = {
   getScreenshots: (p) => get("/screenshots", p),
   // Retailers
   getRetailers: () => get("/retailers"),
+  // Review Queue
+  getReviewPending: (p) => get("/review/pending", p),
+  getReviewRunPromotions: (id) => get(`/review/pending/${id}`),
+  reviewApprove: (ids) => post("/review/approve", { promotion_ids: ids }),
+  reviewReject: (ids) => post("/review/reject", { promotion_ids: ids }),
+  reviewReextract: (id) => post(`/review/reextract/${id}`),
+  reviewUpdate: (id, data) => put(`/review/${id}`, data),
 }
