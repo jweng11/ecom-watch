@@ -17,8 +17,14 @@ class CanadaComputersScraper(BaseScraper):
     async def navigate_to_deals(self, page: Page) -> None:
         """Navigate to Canada Computers promotions page."""
         await page.goto(self.base_url, wait_until="domcontentloaded", timeout=60_000)
+        
+        # Check for empty results
+        if await page.locator("text='No products available yet'").is_visible():
+            logger.warning(f"[{self.retailer_slug}] Page loaded but no products found")
+            return
+
         try:
-            await page.wait_for_selector(".productTemplate, .product-list, .products-grid", timeout=15_000)
+            await page.wait_for_selector(".productTemplate, .product-list, .products-grid, .col-xl-3", timeout=15_000)
         except Exception:
             logger.info(f"[{self.retailer_slug}] Product grid not found, continuing with page as-is")
 

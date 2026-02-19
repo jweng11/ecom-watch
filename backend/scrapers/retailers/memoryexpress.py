@@ -15,7 +15,17 @@ class MemoryExpressScraper(BaseScraper):
 
     async def navigate_to_deals(self, page: Page) -> None:
         """Navigate to Memory Express laptop category."""
-        await page.goto(self.base_url, wait_until="domcontentloaded", timeout=60_000)
+        response = await page.goto(self.base_url, wait_until="domcontentloaded", timeout=60_000)
+        
+        # Check for Cloudflare or access denied
+        if response and response.status in [403, 503]:
+            logger.warning(f"[{self.retailer_slug}] Access denied (status {response.status}). Likely anti-bot.")
+            content = await page.content()
+            if "Just a moment..." in content or "challenge" in content.lower():
+                logger.error(f"[{self.retailer_slug}] Cloudflare challenge detected.")
+                # Basic attempt to wait out the challenge if it's purely JS-based
+                await page.wait_for_timeout(10000)
+        
         try:
             await page.wait_for_selector(".c-shca-icon-item, .PIV_CompareLine, .PROD_header", timeout=15_000)
         except Exception:
