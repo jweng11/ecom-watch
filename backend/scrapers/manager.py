@@ -7,7 +7,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from database.models import ScrapeRun, Retailer
+from database.models import ScrapeRun, Retailer, Promotion
 from scrapers.base import ScrapeResult
 from scrapers.retailers import SCRAPER_REGISTRY
 from scrapers.utils.storage import save_screenshot, save_html, save_metadata
@@ -205,6 +205,63 @@ async def _scrape_single_retailer(retailer: Retailer, trigger_type: str, db: Ses
     if result.status in ("completed", "partial"):
         retailer.last_scraped = datetime.now(timezone.utc)
         db.commit()
+
+    # --- AI Extraction Pipeline ---
+    if result.status in ("completed", "partial") and result.html_content:
+        try:
+            from extraction.ai_extractor import extract_promotions as ai_extract
+            extraction_result = await ai_extract(
+                html_content=result.html_content,
+                retailer_slug=retailer.slug,
+                retailer_name=retailer.name,
+            )
+
+            if extraction_result.error:
+                logger.warning(f"[{retailer.slug}] Extraction error: {extraction_result.error}")
+            elif extraction_result.promotions:
+                from datetime import date as date_type
+                today = date_type.today()
+                for promo in extraction_result.promotions:
+                    db_promo = Promotion(
+                        retailer=promo.retailer,
+                        vendor=promo.vendor,
+                        sku=promo.sku,
+                        msrp=promo.msrp,
+                        ad_price=promo.ad_price,
+                        discount=promo.discount,
+                        discount_pct=promo.discount_pct,
+                        form_factor=promo.form_factor,
+                        lcd_size=promo.lcd_size,
+                        resolution=promo.resolution,
+                        touch=promo.touch,
+                        os=promo.os,
+                        cpu=promo.cpu,
+                        gpu=promo.gpu,
+                        ram=promo.ram,
+                        storage=promo.storage,
+                        notes=promo.notes,
+                        promo_type=promo.promo_type,
+                        source_url=promo.source_url,
+                        scrape_run_id=run_id,
+                        review_status="pending",
+                        week_date=today,
+                    )
+                    db.add(db_promo)
+                db.commit()
+
+                # Update items_found
+                scrape_run = db.get(ScrapeRun, run_id)
+                if scrape_run:
+                    scrape_run.items_found = extraction_result.count
+                    db.commit()
+
+                logger.info(
+                    f"[{retailer.slug}] Extracted {extraction_result.count} promotions "
+                    f"(confidence: {extraction_result.confidence_summary})"
+                )
+        except Exception as e:
+            logger.error(f"[{retailer.slug}] Extraction pipeline failed: {e}")
+            # Don't fail the scrape run — HTML/screenshots are still valuable
 
     logger.info(f"[{retailer.slug}] Scrape run #{run_id} finished with status: {result.status}")
     return run_id
