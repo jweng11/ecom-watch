@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
 import time
+from functools import partial
 from typing import Optional
 
 from google import genai
@@ -85,7 +87,9 @@ async def extract_promotions(
                 f"[{retailer_slug}] Gemini extraction attempt {attempt + 1}/{MAX_RETRIES + 1}"
             )
 
-            response = client.models.generate_content(
+            # Run synchronous Gemini call in a thread to avoid blocking the event loop
+            _generate = partial(
+                client.models.generate_content,
                 model=MODEL_NAME,
                 contents=[
                     {"role": "user", "parts": [{"text": user_prompt}]},
@@ -96,6 +100,8 @@ async def extract_promotions(
                     "response_mime_type": "application/json",
                 },
             )
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(None, _generate)
 
             raw_response = response.text
             items = _parse_json_response(raw_response)
