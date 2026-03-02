@@ -33,9 +33,9 @@ MAX_SCROLL_ITERATIONS = 50
 
 # Stealth defaults (overridden by config.py values when available)
 _DEFAULT_STEALTH_UAS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
 ]
 _DEFAULT_VIEWPORTS = [
     {"width": 1920, "height": 1080},
@@ -45,8 +45,14 @@ _DEFAULT_VIEWPORTS = [
 ]
 
 
+_stealth_config_cache = None
+
+
 def _load_stealth_config():
-    """Load stealth settings from config.py, falling back to defaults."""
+    """Load stealth settings from config.py, falling back to defaults. Cached after first call."""
+    global _stealth_config_cache
+    if _stealth_config_cache is not None:
+        return _stealth_config_cache
     try:
         from config import (
             STEALTH_ENABLED,
@@ -55,9 +61,10 @@ def _load_stealth_config():
             SCRAPE_MIN_DELAY,
             SCRAPE_MAX_DELAY,
         )
-        return STEALTH_ENABLED, STEALTH_USER_AGENTS, STEALTH_VIEWPORTS, SCRAPE_MIN_DELAY, SCRAPE_MAX_DELAY
+        _stealth_config_cache = (STEALTH_ENABLED, STEALTH_USER_AGENTS, STEALTH_VIEWPORTS, SCRAPE_MIN_DELAY, SCRAPE_MAX_DELAY)
     except ImportError:
-        return True, _DEFAULT_STEALTH_UAS, _DEFAULT_VIEWPORTS, 3, 8
+        _stealth_config_cache = (True, _DEFAULT_STEALTH_UAS, _DEFAULT_VIEWPORTS, 3, 8)
+    return _stealth_config_cache
 
 
 @dataclass
