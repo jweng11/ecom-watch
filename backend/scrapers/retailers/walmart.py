@@ -14,7 +14,7 @@ from scrapers.base import BaseScraper
 
 logger = logging.getLogger(__name__)
 
-WALMART_LAPTOPS_URL = "https://www.walmart.ca/browse/electronics/laptops/10003/30622"
+WALMART_LAPTOPS_URL = "https://www.walmart.ca/en/browse/electronics/laptops-computers-accessories/laptops/10003_20038_30548"
 
 
 class WalmartScraper(BaseScraper):

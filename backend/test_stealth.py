@@ -47,7 +47,7 @@ RETAILERS = {
     },
     "walmart": {
         "name": "Walmart",
-        "url": "https://www.walmart.ca/browse/electronics/laptops/10003/30622",
+        "url": "https://www.walmart.ca/en/browse/electronics/laptops-computers-accessories/laptops/10003_20038_30548",
         "protection": "PerimeterX",
     },
     "memoryexpress": {
@@ -57,7 +57,7 @@ RETAILERS = {
     },
     "amazon": {
         "name": "Amazon",
-        "url": "https://www.amazon.ca/gp/bestsellers/electronics/677252011",
+        "url": "https://www.amazon.ca/Best-Sellers-Laptop-Computers/zgbs/electronics/677252011",
         "protection": "CAPTCHA / bot detection",
     },
     "canadacomputers": {

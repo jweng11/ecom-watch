@@ -18,7 +18,7 @@ from scrapers.base import BaseScraper
 logger = logging.getLogger(__name__)
 
 # Bestsellers in laptops category — less protected than search results
-AMAZON_LAPTOPS_URL = "https://www.amazon.ca/gp/bestsellers/electronics/677252011"
+AMAZON_LAPTOPS_URL = "https://www.amazon.ca/Best-Sellers-Laptop-Computers/zgbs/electronics/677252011"
 
 
 class AmazonScraper(BaseScraper):

@@ -33,9 +33,9 @@ MAX_SCROLL_ITERATIONS = 50
 
 # Stealth defaults (overridden by config.py values when available)
 _DEFAULT_STEALTH_UAS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
 ]
 _DEFAULT_VIEWPORTS = [
     {"width": 1920, "height": 1080},
@@ -44,9 +44,19 @@ _DEFAULT_VIEWPORTS = [
     {"width": 1366, "height": 768},
 ]
 
+# Cached stealth config — loaded once at import time, not per-attempt
+_stealth_config_cache = None
+
 
 def _load_stealth_config():
-    """Load stealth settings from config.py, falling back to defaults."""
+    """Load stealth settings from config.py, falling back to defaults.
+
+    Results are cached after the first call to avoid redundant imports/lookups
+    on every scrape attempt.
+    """
+    global _stealth_config_cache
+    if _stealth_config_cache is not None:
+        return _stealth_config_cache
     try:
         from config import (
             STEALTH_ENABLED,
@@ -55,9 +65,10 @@ def _load_stealth_config():
             SCRAPE_MIN_DELAY,
             SCRAPE_MAX_DELAY,
         )
-        return STEALTH_ENABLED, STEALTH_USER_AGENTS, STEALTH_VIEWPORTS, SCRAPE_MIN_DELAY, SCRAPE_MAX_DELAY
+        _stealth_config_cache = (STEALTH_ENABLED, STEALTH_USER_AGENTS, STEALTH_VIEWPORTS, SCRAPE_MIN_DELAY, SCRAPE_MAX_DELAY)
     except ImportError:
-        return True, _DEFAULT_STEALTH_UAS, _DEFAULT_VIEWPORTS, 3, 8
+        _stealth_config_cache = (True, _DEFAULT_STEALTH_UAS, _DEFAULT_VIEWPORTS, 3, 8)
+    return _stealth_config_cache
 
 
 @dataclass
@@ -146,15 +157,34 @@ class BaseScraper:
             viewport = {"width": 1920, "height": 1080}
             ua = USER_AGENT
 
-        self._context = await self._browser.new_context(
-            user_agent=ua,
-            viewport=viewport,
-            locale="en-CA",
-            timezone_id="America/Toronto",
-        )
+        context_kwargs = {
+            "user_agent": ua,
+            "viewport": viewport,
+            "locale": "en-CA",
+            "timezone_id": "America/Toronto",
+        }
+
+        if self._use_stealth:
+            # Extract Chrome major version from UA for Sec-CH-UA header
+            import re
+            chrome_match = re.search(r"Chrome/(\d+)", ua)
+            chrome_ver = chrome_match.group(1) if chrome_match else "145"
+
+            context_kwargs.update({
+                "color_scheme": random.choice(["light", "dark", "no-preference"]),
+                "has_touch": False,
+                "extra_http_headers": {
+                    "Accept-Language": "en-CA,en;q=0.9,fr-CA;q=0.8,fr;q=0.7",
+                    "Sec-CH-UA": f'"Chromium";v="{chrome_ver}", "Google Chrome";v="{chrome_ver}", "Not?A_Brand";v="99"',
+                    "Sec-CH-UA-Mobile": "?0",
+                    "Sec-CH-UA-Platform": '"Windows"' if "Windows" in ua else ('"macOS"' if "Mac" in ua else '"Linux"'),
+                },
+            })
+
+        self._context = await self._browser.new_context(**context_kwargs)
         self._context.set_default_timeout(NAV_TIMEOUT_MS)
 
-        # Apply playwright-stealth patches
+        # Apply playwright-stealth patches (patches webdriver, plugins, languages, etc.)
         if self._use_stealth:
             try:
                 from playwright_stealth import stealth_async
