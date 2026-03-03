@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -6,7 +6,80 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Input } from "@/components/ui/input"
 import { api } from "@/lib/api"
 import { formatCurrency } from "@/lib/utils"
-import { ArrowLeft, Check, X, RefreshCw } from "lucide-react"
+import { ArrowLeft, Check, X, RefreshCw, Pencil } from "lucide-react"
+
+// Editable fields and their display types
+const EDITABLE_FIELDS = {
+  vendor: { label: "Vendor", type: "text" },
+  sku: { label: "SKU", type: "text" },
+  msrp: { label: "MSRP", type: "number" },
+  ad_price: { label: "Ad Price", type: "number" },
+  cpu: { label: "CPU", type: "text" },
+  ram: { label: "RAM", type: "text" },
+  storage: { label: "Storage", type: "text" },
+  lcd_size: { label: "Screen", type: "text" },
+  gpu: { label: "GPU", type: "text" },
+  resolution: { label: "Resolution", type: "text" },
+  form_factor: { label: "Form Factor", type: "text" },
+  os: { label: "OS", type: "text" },
+  promo_type: { label: "Promo Type", type: "text" },
+  notes: { label: "Notes", type: "text" },
+}
+
+function EditableCell({ value, field, promoId, onSave }) {
+  const [editing, setEditing] = useState(false)
+  const [editValue, setEditValue] = useState(value ?? "")
+  const fieldConfig = EDITABLE_FIELDS[field]
+  const isNumber = fieldConfig?.type === "number"
+
+  function handleDoubleClick() {
+    setEditValue(value ?? "")
+    setEditing(true)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === "Enter") {
+      commitEdit()
+    } else if (e.key === "Escape") {
+      setEditing(false)
+    }
+  }
+
+  function commitEdit() {
+    setEditing(false)
+    const newValue = isNumber
+      ? (editValue === "" ? null : parseFloat(editValue))
+      : (editValue === "" ? null : editValue)
+    if (newValue !== value) {
+      onSave(promoId, field, newValue)
+    }
+  }
+
+  if (editing) {
+    return (
+      <Input
+        type={isNumber ? "number" : "text"}
+        step={isNumber ? "0.01" : undefined}
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onBlur={commitEdit}
+        onKeyDown={handleKeyDown}
+        autoFocus
+        className="h-7 text-xs min-w-[80px]"
+      />
+    )
+  }
+
+  return (
+    <span
+      onDoubleClick={handleDoubleClick}
+      className="cursor-pointer hover:bg-muted/50 px-1 py-0.5 rounded inline-block min-w-[30px]"
+      title="Double-click to edit"
+    >
+      {value ?? "—"}
+    </span>
+  )
+}
 
 export function ReviewQueuePage() {
   const [runs, setRuns] = useState([])
@@ -15,7 +88,6 @@ export function ReviewQueuePage() {
   const [selected, setSelected] = useState(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [editingCell, setEditingCell] = useState(null)
 
   useEffect(() => { loadPending() }, [])
 
@@ -74,6 +146,17 @@ export function ReviewQueuePage() {
     }
   }
 
+  const handleCellSave = useCallback(async (promoId, field, newValue) => {
+    try {
+      const updated = await api.reviewUpdate(promoId, { [field]: newValue })
+      setPromotions(prev =>
+        prev.map(p => (p.id === promoId ? { ...p, ...updated } : p))
+      )
+    } catch (e) {
+      setError(`Failed to update: ${e.message}`)
+    }
+  }, [])
+
   function toggleSelect(id) {
     setSelected(prev => {
       const next = new Set(prev)
@@ -94,7 +177,14 @@ export function ReviewQueuePage() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-bold">Review Queue</h1>
-        <Card><CardContent className="p-6 text-center text-red-500">{error}</CardContent></Card>
+        <Card>
+          <CardContent className="p-6 text-center text-red-500">
+            {error}
+            <Button variant="outline" size="sm" className="ml-4" onClick={() => { setError(null); loadPending() }}>
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -109,6 +199,9 @@ export function ReviewQueuePage() {
           </Button>
           <h1 className="text-2xl font-bold">Review: {selectedRun.retailer}</h1>
           <Badge variant="outline">{promotions.length} pending</Badge>
+          <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <Pencil className="h-3 w-3" /> Double-click cells to edit
+          </span>
         </div>
 
         <div className="flex gap-2">
@@ -152,19 +245,43 @@ export function ReviewQueuePage() {
                       <input type="checkbox" checked={selected.has(p.id)}
                         onChange={() => toggleSelect(p.id)} className="cursor-pointer" />
                     </TableCell>
-                    <TableCell className="font-medium">{p.vendor}</TableCell>
-                    <TableCell className="max-w-[300px] truncate text-xs">{p.sku}</TableCell>
-                    <TableCell className="text-right">{p.msrp ? formatCurrency(p.msrp) : "—"}</TableCell>
+                    <TableCell className="font-medium">
+                      <EditableCell value={p.vendor} field="vendor" promoId={p.id} onSave={handleCellSave} />
+                    </TableCell>
+                    <TableCell className="max-w-[300px] text-xs">
+                      <EditableCell value={p.sku} field="sku" promoId={p.id} onSave={handleCellSave} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <EditableCell
+                        value={p.msrp}
+                        field="msrp"
+                        promoId={p.id}
+                        onSave={handleCellSave}
+                      />
+                    </TableCell>
                     <TableCell className="text-right font-medium text-green-600">
-                      {p.ad_price ? formatCurrency(p.ad_price) : "—"}
+                      <EditableCell
+                        value={p.ad_price}
+                        field="ad_price"
+                        promoId={p.id}
+                        onSave={handleCellSave}
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       {p.discount ? `${formatCurrency(p.discount)} (${p.discount_pct?.toFixed(0)}%)` : "—"}
                     </TableCell>
-                    <TableCell className="text-xs">{p.cpu || "—"}</TableCell>
-                    <TableCell className="text-xs">{p.ram || "—"}</TableCell>
-                    <TableCell className="text-xs">{p.storage || "—"}</TableCell>
-                    <TableCell className="text-xs">{p.lcd_size || "—"}</TableCell>
+                    <TableCell className="text-xs">
+                      <EditableCell value={p.cpu} field="cpu" promoId={p.id} onSave={handleCellSave} />
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <EditableCell value={p.ram} field="ram" promoId={p.id} onSave={handleCellSave} />
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <EditableCell value={p.storage} field="storage" promoId={p.id} onSave={handleCellSave} />
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <EditableCell value={p.lcd_size} field="lcd_size" promoId={p.id} onSave={handleCellSave} />
+                    </TableCell>
                   </TableRow>
                 ))}
                 {promotions.length === 0 && (
