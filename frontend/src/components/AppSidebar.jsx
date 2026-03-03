@@ -7,10 +7,10 @@ const navItems = [
   { id: "trends", label: "Trends", icon: TrendingUp, section: "Analysis" },
   { id: "comparison", label: "Comparison", icon: GitCompareArrows, section: "Analysis" },
   { id: "screenshots", label: "Screenshots", icon: Camera, section: "Scraping" },
+  { id: "review", label: "Review Queue", icon: ScanSearch, section: "Scraping" },
 ]
 
 const comingSoon = [
-  { label: "Review Queue", icon: ScanSearch },
   { label: "Alerts", icon: Bell },
   { label: "Settings", icon: Settings },
 ]

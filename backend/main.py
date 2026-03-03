@@ -9,6 +9,7 @@ from database.models import init_db
 from api.promotions import router as promotions_router
 from api.analytics import router as analytics_router
 from api.scraping import router as scraping_router
+from api.review import router as review_router
 
 
 # [FIX] Replace deprecated @app.on_event("startup") with lifespan context manager
@@ -32,6 +33,7 @@ app.add_middleware(
 app.include_router(promotions_router)
 app.include_router(analytics_router)
 app.include_router(scraping_router)
+app.include_router(review_router)
 
 
 @app.get("/api/health")

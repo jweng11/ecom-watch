@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-WORK_DIR = Path("/sessions/practical-youthful-faraday/ecom-watch-work")
+WORK_DIR = BASE_DIR / "work"
 DATA_DIR = WORK_DIR / "data"
 SCREENSHOTS_DIR = DATA_DIR / "screenshots"
 DB_PATH = DATA_DIR / "ecom-watch.db"

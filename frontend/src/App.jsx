@@ -5,6 +5,7 @@ import { PromotionsPage } from "@/pages/Promotions"
 import { TrendsPage } from "@/pages/Trends"
 import { ComparisonPage } from "@/pages/Comparison"
 import { ScreenshotsPage } from "@/pages/Screenshots"
+import { ReviewQueuePage } from "@/pages/ReviewQueue"
 
 // [FIX] Add Error Boundary to catch unhandled rendering errors
 class ErrorBoundary extends Component {
@@ -51,6 +52,7 @@ const pages = {
   trends: TrendsPage,
   comparison: ComparisonPage,
   screenshots: ScreenshotsPage,
+  review: ReviewQueuePage,
 }
 
 export default function App() {
