@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+import functools
 import json
 import logging
 import os
@@ -32,7 +34,6 @@ def _parse_json_response(text: str) -> list[dict]:
     text = text.strip()
     # Strip markdown code fences
     if text.startswith("```"):
-        # Remove first line (```json or ```) and last line (```)
         lines = text.split("\n")
         lines = lines[1:]  # remove opening fence
         if lines and lines[-1].strip() == "```":
@@ -45,6 +46,22 @@ def _parse_json_response(text: str) -> list[dict]:
     if not isinstance(data, list):
         raise ValueError(f"Expected JSON array, got {type(data).__name__}")
     return data
+
+
+def _sync_generate(client: genai.Client, user_prompt: str) -> str:
+    """Synchronous Gemini API call (to be run in executor)."""
+    response = client.models.generate_content(
+        model=MODEL_NAME,
+        contents=[
+            {"role": "user", "parts": [{"text": user_prompt}]},
+        ],
+        config={
+            "system_instruction": SYSTEM_PROMPT,
+            "temperature": 0.1,
+            "response_mime_type": "application/json",
+        },
+    )
+    return response.text
 
 
 async def extract_promotions(
@@ -78,6 +95,7 @@ async def extract_promotions(
 
     last_error: Optional[str] = None
     raw_response: Optional[str] = None
+    loop = asyncio.get_running_loop()
 
     for attempt in range(MAX_RETRIES + 1):
         try:
@@ -85,19 +103,12 @@ async def extract_promotions(
                 f"[{retailer_slug}] Gemini extraction attempt {attempt + 1}/{MAX_RETRIES + 1}"
             )
 
-            response = client.models.generate_content(
-                model=MODEL_NAME,
-                contents=[
-                    {"role": "user", "parts": [{"text": user_prompt}]},
-                ],
-                config={
-                    "system_instruction": SYSTEM_PROMPT,
-                    "temperature": 0.1,
-                    "response_mime_type": "application/json",
-                },
+            # Run the blocking Gemini SDK call in a thread pool executor
+            raw_response = await loop.run_in_executor(
+                None,
+                functools.partial(_sync_generate, client, user_prompt),
             )
 
-            raw_response = response.text
             items = _parse_json_response(raw_response)
 
             promotions = []
